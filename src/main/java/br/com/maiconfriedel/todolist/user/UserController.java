@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import at.favre.lib.crypto.bcrypt.BCrypt;
 import br.com.maiconfriedel.todolist.BaseResponse;
 
 @RestController
@@ -23,6 +24,9 @@ public class UserController {
 
       return ResponseEntity.status(400).body(new BaseResponse<UserModel>("User already exists"));
     } else {
+      var hashed = BCrypt.withDefaults().hashToString(12, usermodel.getPassword().toCharArray());
+      usermodel.setPassword(hashed);
+
       var userCreated = this.userRepository.save(usermodel);
 
       return ResponseEntity.status(201).body(new BaseResponse<UserModel>(userCreated));
