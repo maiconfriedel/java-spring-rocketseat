@@ -13,7 +13,7 @@ import lombok.Data;
 
 @Data
 @Entity(name = "tb_tasks")
-public class TaksModel {
+public class TaskModel {
 
   @Id
   @GeneratedValue(generator = "UUID")
@@ -30,4 +30,11 @@ public class TaksModel {
 
   @CreationTimestamp
   private LocalDateTime createdAt;
+
+  public void setTitle(String title) throws Exception {
+    if (title.length() > 50) {
+      throw new Exception("The title must have max 50 chars", null);
+    }
+    this.title = title;
+  }
 }

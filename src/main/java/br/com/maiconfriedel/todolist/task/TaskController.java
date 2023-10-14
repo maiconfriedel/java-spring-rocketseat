@@ -26,42 +26,48 @@ public class TaskController {
   private ITaskRepository taskRepository;
 
   @PostMapping("/")
-  public ResponseEntity<BaseResponse<TaksModel>> create(@RequestBody TaksModel taksModel, HttpServletRequest request) {
+  public ResponseEntity<BaseResponse<TaskModel>> create(@RequestBody TaskModel taksModel, HttpServletRequest request) {
     taksModel.setUserId((UUID) request.getAttribute("userId"));
-    var task = taskRepository.save(taksModel);
 
     var currentDate = LocalDateTime.now();
     if (currentDate.isAfter(taksModel.getStartAt()) || currentDate.isAfter(taksModel.getEndAt())) {
       return ResponseEntity.status(400)
-          .body(new BaseResponse<TaksModel>("Start or end date must be greater than today"));
+          .body(new BaseResponse<TaskModel>("Start or end date must be greater than today"));
     }
 
     if (taksModel.getStartAt().isAfter(taksModel.getEndAt())) {
-      return ResponseEntity.status(400).body(new BaseResponse<TaksModel>("End date must be greater than start date"));
+      return ResponseEntity.status(400).body(new BaseResponse<TaskModel>("End date must be greater than start date"));
     }
 
-    return ResponseEntity.status(201).body(new BaseResponse<TaksModel>((task)));
+    var task = taskRepository.save(taksModel);
+
+    return ResponseEntity.status(201).body(new BaseResponse<TaskModel>((task)));
   }
 
   @GetMapping("/")
-  public List<TaksModel> list(HttpServletRequest request) {
+  public List<TaskModel> list(HttpServletRequest request) {
     return this.taskRepository.findByUserId((UUID) request.getAttribute("userId"));
   }
 
   @PutMapping("/{taskId}")
-  public ResponseEntity<BaseResponse<TaksModel>> update(@PathVariable UUID taskId, @RequestBody TaksModel taskModel,
+  public ResponseEntity<BaseResponse<TaskModel>> update(@PathVariable UUID taskId, @RequestBody TaskModel taskModel,
       HttpServletRequest request) {
     var task = this.taskRepository.findById(taskId).orElse(null);
 
     if (task == null) {
       return ResponseEntity.badRequest()
-          .body(new BaseResponse<TaksModel>("Task with id" + taskId.toString() + " not found"));
+          .body(new BaseResponse<TaskModel>("Task with id" + taskId.toString() + " not found"));
+    }
+
+    if (!task.getUserId().equals(request.getAttribute("userId"))) {
+      return ResponseEntity.badRequest()
+          .body(new BaseResponse<TaskModel>("You do not have permission to change this task"));
     }
 
     Utils.copyNonNullProperties(taskModel, task);
 
     var response = this.taskRepository.save(task);
 
-    return ResponseEntity.ok().body(new BaseResponse<TaksModel>(response));
+    return ResponseEntity.ok().body(new BaseResponse<TaskModel>(response));
   }
 }
